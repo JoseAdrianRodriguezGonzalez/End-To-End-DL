@@ -2,9 +2,12 @@ import optuna
 
 from tuning.objective import objective
 import json
-
+import os 
 def run_tuning(args):
-
+    dirname=os.path.dirname(args.output_path)
+    if dirname:
+        os.makedirs(dirname,exist_ok=True)
+    print("Starting hyperparameter tuning...")
     study = optuna.create_study(
         direction="minimize"
     )

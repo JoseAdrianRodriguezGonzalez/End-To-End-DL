@@ -8,7 +8,7 @@ from models.factory import create_model
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+from collections import Counter
 
 def train_model(**params):
     batch_size = params.get("batch_size", 64)
@@ -17,9 +17,10 @@ def train_model(**params):
     patience = params.get("patience", 10)
     min_delta = params.get("min_delta", 1e-3)
     device = get_device()
+
     print(f"Training on {device}")
     
-    dataset_class=ImageDataset("data",batch_size)
+    dataset_class=ImageDataset("data/raw-img",batch_size)
     
     train, val, test = dataset_class.get_loaders()
 

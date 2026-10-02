@@ -26,5 +26,7 @@ def main():
     export_parser.add_argument("--output", type=str,default="serving/model_repository/cnn/1/model.onnx")
     export_parser.add_argument("--device", type=str,default="cpu",choices=["cpu","cuda","mps"])
     export_parser.set_defaults(func=model_extract)
+    args=parser.parse_args()
+    args.func(args)
 if __name__ == "__main__":
     main()

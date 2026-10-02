@@ -51,8 +51,8 @@ def fit(model,train_loader,val_loader,criterion,optimizer,device,num_epochs,earl
         history["val_loss"].append(val_loss)
         history["learning_rate"].append(current_lr)
         print(f"Epoch {epoch+1}/{num_epochs}|")
-        print(f" train loss: {train_loss}")
-        print(f" val loss: {val_loss}")
+        print(f" train loss: {train_loss:.15f}")
+        print(f" val loss: {val_loss:.15f}")
         print(f" Learning rate: {current_lr:.2e}")
         if scheduler is not None:
             scheduler.step(val_loss)
