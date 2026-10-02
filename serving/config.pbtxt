@@ -12,7 +12,14 @@ input [
   }
 ]
 output [{
-    name:"output"
-    data_type: TYPE_FP32
-    dims:[10]
-  }]
+  name:"output"
+  data_type: TYPE_FP32
+  dims:[10]
+}]
+instance_group [
+  {
+    kind: KIND_GPU
+    count: 1
+    gpus: [0]
+  }
+]

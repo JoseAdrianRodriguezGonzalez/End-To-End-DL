@@ -1,7 +1,7 @@
 from callbacks.early_stopping import EarlyStopping
 from utils.device import get_device
 from utils.plotting import plot_history
-from datasets.mnist import get_mnist_loader
+from datasets.animals import ImageDataset
 from engine.engine import evaluate, fit
 from models.factory import create_model 
 
@@ -18,11 +18,10 @@ def train_model(**params):
     min_delta = params.get("min_delta", 1e-3)
     device = get_device()
     print(f"Training on {device}")
-
-    train, val, test = get_mnist_loader(
-        "data",
-        batch_size
-    )
+    
+    dataset_class=ImageDataset("data",batch_size)
+    
+    train, val, test = dataset_class.get_loaders()
 
     model = create_model("vgg11")
     model.to(device)

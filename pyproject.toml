@@ -1,7 +1,25 @@
 [project]
 name = "end-to-end-dl"
 version = "0.1.0"
-description = "Add your description here"
+description = "End-to-end deep learning project"
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.2",
+    "onnx>=1.23.1",
+    "onnxruntime-gpu>=1.30.0",
+    "optuna>=5.0.0",
+    "torch==2.5.1+cu121",
+    "torchvision==0.20.1+cu121",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true

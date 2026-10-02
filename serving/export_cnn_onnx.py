@@ -1,16 +1,23 @@
 import torch 
 import onnx 
 import onnxruntime as ort  
-from models.mlp import MLP
-def model_extract():
-    model=MLP()
-    state_dict= torch.load("artifacts/best_model.pth",
-                           map_location="cpu",
+from models.factory import create_model
+import os 
+def model_extract(args):
+    dirname=os.path.dirname(args.output)
+    if dirname:
+        os.makedirs(dirname,exist_ok=True)
+    device=torch.device(args.device)
+    model=create_model(args.name,args.labels)
+    state_dict= torch.load(args.model,
+                           map_location=device,
                            weights_only=True)
     model.load_state_dict(state_dict)
+    model.to(device)
     model.eval() 
     dummy_input=torch.randn(
-        8,1,28,28
+        8,1,28,28,
+        device=device
     )
 
     onnx_program= torch.onnx.export(model,(dummy_input,),
@@ -18,14 +25,20 @@ def model_extract():
                                     output_names=["output"],
                                     dynamic_shapes={
                                     "x":{0:"batch_size"}},dynamo=True)
-    onnx_program.save("serving/model_repository/cnn/1/model.onnx")
-    onnx_model = onnx.load("serving/model_repository/cnn/1/model.onnx")
+    onnx_program.save(args.output)
+    onnx_model = onnx.load(args.output)
     onnx.checker.check_model(onnx_model)
     with torch.inference_mode():
         torch_output= model(dummy_input)
-    session= ort.InferenceSession("serving/model_repository/cnn/1/model.onnx",
-                                  providers=['CPUExecutionProvider'])
-    onnx_output=session.run(["output"],{"input":dummy_input.numpy()})[0]
-    torch.testing.assert_close(torch_output,torch.tensor(onnx_output),
+    providers=(["CUDAExecutionProvider","CPUExecutionProvider"] 
+               if args.device == "cuda"
+               else
+               ["CPUExecutionProvider"])
+    session= ort.InferenceSession(args.output,
+                                  providers=providers)
+    onnx_output=session.run(["output"],{"input":dummy_input.cpu().numpy()})[0]
+    torch.testing.assert_close(torch_output.cpu(),torch.tensor(onnx_output),
                               rtol=1e-3,atol=1e-5)
-model_extract()
+    print("ONNX export succesful")
+    print("pytorch and onnx outputs match. ")
+
