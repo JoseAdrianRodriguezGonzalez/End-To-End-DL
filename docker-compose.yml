@@ -1,0 +1,11 @@
+service:
+  frontend:
+    build:
+      context: ./frontend/ 
+      dockerfile: Dockerfile
+    container_name: end-to-end-dl-frontend
+    ports:
+      - "8000:80"
+    restart: unless-stopped 
+
+
