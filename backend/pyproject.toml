@@ -1,0 +1,12 @@
+[project]
+name = "end-to-end-dl-backend"
+version = "0.1.0"
+description = "Backend API para el servidor de inferencia Triton"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pillow>=10.0.0",
+    "httpx>=0.26.0",
+    "python-multipart>=0.0.6",
+]
