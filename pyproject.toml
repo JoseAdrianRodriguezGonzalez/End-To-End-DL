@@ -10,7 +10,9 @@ dependencies = [
     "numpy>=2.5.2",
     "onnx>=1.23.1",
     "onnxruntime-gpu>=1.30.0",
+    "onnxscript>=0.7.2",
     "optuna>=5.0.0",
+    "scikit-learn>=1.9.1",
     "torch==2.5.1+cu121",
     "torchvision==0.20.1+cu121",
 ]

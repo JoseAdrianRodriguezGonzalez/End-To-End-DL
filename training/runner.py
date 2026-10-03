@@ -9,8 +9,6 @@ def run_final_training(args):
     directory=os.path.dirname(args.output_path)
     if directory:
         os.makedirs(directory,exist_ok=True )
-    if not os.path.isdir(args.output_media):
-        raise ValueError("Debe de ser un directorio")
     if args.output_media:
         os.makedirs(args.output_media,exist_ok=True)
     with open(args.params) as file:
@@ -23,7 +21,7 @@ def run_final_training(args):
 
 
     print(f"Test loss: {test_loss}")
-    with open(os.path.join(args.output_media,test.txt), "w") as f:
+    with open(os.path.join(args.output_media,"test.txt"), "w") as f:
         f.write(str(test_loss))
     plot_history(history,args.output_media)
 

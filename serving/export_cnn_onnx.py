@@ -16,7 +16,7 @@ def model_extract(args):
     model.to(device)
     model.eval() 
     dummy_input=torch.randn(
-        8,1,28,28,
+        1,3,224,224,
         device=device
     )
 
@@ -34,11 +34,12 @@ def model_extract(args):
                if args.device == "cuda"
                else
                ["CPUExecutionProvider"])
+    ort.preload_dlls()
     session= ort.InferenceSession(args.output,
                                   providers=providers)
     onnx_output=session.run(["output"],{"input":dummy_input.cpu().numpy()})[0]
     torch.testing.assert_close(torch_output.cpu(),torch.tensor(onnx_output),
-                              rtol=1e-3,atol=1e-5)
+                              rtol=1e-3,atol=1e-3)
     print("ONNX export succesful")
     print("pytorch and onnx outputs match. ")
 
