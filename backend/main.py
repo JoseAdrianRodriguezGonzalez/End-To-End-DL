@@ -18,18 +18,46 @@ app.add_middleware(
 
 client = TritonClient(TRITON_SERVER_URL)
 
-
 @app.get("/api/health")
 async def health() -> dict:
     try:
+        url = (
+            f"{TRITON_SERVER_URL}/v2/models/"
+            f"{TRITON_MODEL_NAME}/ready"
+        )
+        print("HEALTH URL:", url)
         async with httpx.AsyncClient() as c:
-            r = await c.get(f"{TRITON_SERVER_URL}/v2/health/live", f"{TRITON_MODEL_NAME}/ready",timeout=5.0)
-            if r.status_code == 200:
-                return {"status": "healthy", "triton": "ok","model":TRITON_MODEL_NAME}
-    except httpx.RequestError:
-        pass
-    return {"status": "unhealthy", "triton": "error","model":TRITON_MODEL_NAME}
+            r = await c.get(
+                url,
+                timeout=5.0,
+            )
 
+        print("HEALTH STATUS:", r.status_code)
+        print("HEALTH BODY:", r.text)
+
+        if r.status_code == 200:
+            return {
+                "status": "healthy",
+                "triton": "ok",
+                "model": TRITON_MODEL_NAME,
+            }
+
+        return {
+            "status": "unhealthy",
+            "triton": "error",
+            "model": TRITON_MODEL_NAME,
+            "triton_status": r.status_code,
+        }
+
+    except Exception as error:
+        print("HEALTH ERROR:", repr(error))
+
+        return {
+            "status": "unhealthy",
+            "triton": "error",
+            "model": TRITON_MODEL_NAME,
+            "error": repr(error),
+        }
 
 @app.get("/api/models")
 async def list_models() -> dict:

@@ -31,7 +31,8 @@ export async function predictImage(file: File): Promise<PredictResponse> {
   formData.append('file', file)
 
   const response = await tritonApi.post<PredictResponse>('/predict', formData)
-
+  console.log('AXIOS RESPONSE:', response)
+  console.log('AXIOS DATA:', response.data)
   return response.data
 }
 

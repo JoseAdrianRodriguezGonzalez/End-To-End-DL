@@ -1,4 +1,4 @@
-import base64
+
 import io
 
 import httpx
@@ -40,20 +40,19 @@ class TritonClient:
 
     async def infer(self, model_name: str, image_bytes: bytes) -> dict:
         arr = await self.preprocess_image(image_bytes)
-
+        data=arr.flatten().tolist()
         payload = {
             "inputs": [
                 {
                     "name": TRITON_INPUT_NAME,
                     "datatype": "FP32",
                     "shape": list(arr.shape),
-                    "binary_data": base64.b64encode(arr.tobytes()).decode("utf-8"),
+                    "data": data
                 }
             ],
             "outputs":[
                 {
                     "name":TRITON_OUTPUT_NAME,
-                    "binary_data":True 
                 }
             ]
         }
@@ -67,13 +66,28 @@ class TritonClient:
             response.raise_for_status()
             data = response.json()
         output=next(output for output in data["outputs"] if output["name"]==TRITON_OUTPUT_NAME)
-        predictions = np.frombuffer(
-            base64.b64decode(output["binary_data"]), dtype=np.float32
-        ).reshape(output["shape"])
-        probabilities=self._softmax(predictions)
+        logits = np.array(output["data"],dtype=np.float32).reshape(1,10)
+        print("LOGITS SHAPE:", logits.shape)
+        print("LOGITS TYPE:", type(logits))
 
-        return {"logits":predictions.tolist(),"probabilities":probabilities.tolist(),"top":self._top_k(probabilities,k=5)}
+        probabilities = self._softmax(logits)
 
+        print("PROBABILITIES:", probabilities)
+        print("PROBABILITIES SHAPE:", probabilities.shape)
+        print("PROBABILITIES TYPE:", type(probabilities))
+
+        top = self._top_k(
+            probabilities[0],
+            k=5,
+        )
+
+        print("TOP:", top)
+
+        return {
+            "logits": logits.tolist(),
+            "probabilities": probabilities.tolist(),
+            "top": top,
+        }    
     @staticmethod
     def _softmax(logits:np.ndarray)->np.ndarray:
         logits=logits-np.max(logits,axis=1,keepdims=True)

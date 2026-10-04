@@ -3,7 +3,7 @@
     <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-xl font-bold">Inference GUI</h1>
       <div class="flex items-center gap-3">
-        <div class="flex itemx-center gap-2">
+        <div class="flex items-center gap-2">
           <span class="text-sm text-indigo-100">Servidor:</span>
           <span :class="statusClass">{{ serverStatus }}</span>
         </div>
@@ -26,8 +26,17 @@ let statusInterval:ReturnType<typeof setInterval> | undefined
 async function refreshStatus() {
   try {
     const data = await checkHealth()
-    serverStatus.value = data.triton === 'ok' ? 'En línea' : 'Offline'
-    statusClass.value = data.triton === 'ok' ? 'text-green-300 font-medium' : 'text-red-300'
+    if(data.triton==='ok'){
+      serverStatus.value='En línea'
+      statusClass.value = 'text-green-300 font-medium' 
+      modelName.value=data.model 
+    }
+    else{
+
+      serverStatus.value='Offline'
+      statusClass.value = 'text-red-300' 
+      
+    }
   } catch {
     serverStatus.value = 'Offline'
     statusClass.value = 'text-red-300'

@@ -20,7 +20,7 @@ services:
     ports:
       - "8081:8000"
     environment:
-      TRITON_SERVER_URL: http//triton:8000 
+      TRITON_SERVER_URL: http://triton:8000 
       TRITON_MODEL_NAME: cnn
       TRITON_INPUT_NAME: input 
       TRITON_OUTPUT_NAME: output 
