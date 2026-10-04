@@ -2,8 +2,8 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 import httpx
-
-from config import TRITON_SERVER_URL, TRITON_MODEL_NAME
+import uvicorn
+from config import TRITON_SERVER_URL, TRITON_MODEL_NAME,CLASS_NAMES
 from triton_client import TritonClient
 
 app = FastAPI(title="Inference API", version="0.1.0")
@@ -23,12 +23,12 @@ client = TritonClient(TRITON_SERVER_URL)
 async def health() -> dict:
     try:
         async with httpx.AsyncClient() as c:
-            r = await c.get(f"{TRITON_SERVER_URL}/v2/health/live", timeout=5.0)
+            r = await c.get(f"{TRITON_SERVER_URL}/v2/health/live", f"{TRITON_MODEL_NAME}/ready",timeout=5.0)
             if r.status_code == 200:
-                return {"status": "healthy", "triton": "ok"}
+                return {"status": "healthy", "triton": "ok","model":TRITON_MODEL_NAME}
     except httpx.RequestError:
         pass
-    return {"status": "unhealthy", "triton": "error"}
+    return {"status": "unhealthy", "triton": "error","model":TRITON_MODEL_NAME}
 
 
 @app.get("/api/models")
@@ -37,7 +37,7 @@ async def list_models() -> dict:
         async with httpx.AsyncClient() as c:
             r = await c.get(f"{TRITON_SERVER_URL}/v2/repository/index", timeout=10.0)
             r.raise_for_status()
-            return r.json()
+            return {"models":r.json()}
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Cannot reach Triton: {e}")
     except httpx.HTTPStatusError as e:
@@ -50,7 +50,8 @@ async def predict(file: UploadFile = File(...)) -> dict:
         raise HTTPException(status_code=400, detail="El archivo debe ser una imagen")
 
     image_bytes = await file.read()
-
+    if not image_bytes:
+        raise HTTPException(status_code=400,detail="El archivo esta vacio")
     try:
         result = await client.infer(TRITON_MODEL_NAME, image_bytes)
     except httpx.HTTPStatusError as e:
@@ -59,8 +60,18 @@ async def predict(file: UploadFile = File(...)) -> dict:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {str(e)}")
+    top_predictions=[
+        {
+            "class":CLASS_NAMES[prediction["index"]],
+            "index":prediction["index"],
+            "confidence":prediction["confidence"]
+        }
+        for prediction in result["top"]
+    ]
+    best_prediction=top_predictions[0]
 
-    return {"model": TRITON_MODEL_NAME, **result}
+
+    return {"model": TRITON_MODEL_NAME, "prediction":best_prediction,"top":top_predictions,"probabilities":result["probabilities"]}
 
 
 if __name__ == "__main__":

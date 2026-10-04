@@ -1,11 +1,41 @@
-service:
+services:
+  triton:
+    image: nvcr.io/nvidia/tritonserver:26.08-py3
+    ports:
+      - "8001:8001" #http 
+      - "8002:8002" #grcp 
+      - "8000:8000" #metricas 
+    volumes:
+      - ./serving/model_repository:/models 
+    command:
+      - tritonserver 
+      - --model-repository=/models
+      - --model-control-mode=poll 
+      - --repository-poll-secs=15
+  backend:
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile 
+      container_name: end-to-end-dl-backend 
+      ports:
+        - "8081:8000"
+      environment:
+        TRITON_SERVER_URL: http//triton:8000 
+        TRITON_MODEL_NAME: cnn
+        TRITON_INPUT_NAME: input 
+        TRITON_OUTPUT_NAME: output 
+        INPUT_SIZE: 224
+      depends_on:
+        - triton 
+      restart: unless-stopped
+
+
+
   frontend:
     build:
       context: ./frontend/ 
       dockerfile: Dockerfile
     container_name: end-to-end-dl-frontend
     ports:
-      - "8000:80"
+      - "8080:80"
     restart: unless-stopped 
-
-

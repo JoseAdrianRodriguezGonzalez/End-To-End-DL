@@ -11,9 +11,18 @@ from config import (
     TRITON_INPUT_NAME,
     TRITON_OUTPUT_NAME,
     INPUT_SIZE,
+    CLASS_NAMES
 )
 
-
+#iMAGENET noramlization 
+MEAN=np.array(
+    [0.485,0.456,0.406],
+    dtype=np.float32
+)
+STD=np.array(
+    [0.229,0.224,0.225],
+    dtype=np.float32
+)
 class TritonClient:
     def __init__(self, base_url: str = TRITON_SERVER_URL):
         self.base_url = base_url.rstrip("/")
@@ -21,11 +30,13 @@ class TritonClient:
     async def preprocess_image(
         self, image_bytes: bytes, width: int = INPUT_SIZE, height: int = INPUT_SIZE
     ) -> np.ndarray:
-        image = Image.open(io.BytesIO(image_bytes)).convert("L")
-        image = image.resize((width, height), Image.LANCZOS)
-        arr = np.array(image).astype(np.float32) / 255.0
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
+        arr = np.asarray(image,dtype=np.float32)/255.0
+        arr=(arr-MEAN)/STD 
+        arr=np.transpose(arr,(2,0,1))
         arr = np.expand_dims(arr, axis=0)
-        return arr
+        return np.ascontiguousarray(arr,dtype=np.float32)
 
     async def infer(self, model_name: str, image_bytes: bytes) -> dict:
         arr = await self.preprocess_image(image_bytes)
@@ -38,6 +49,12 @@ class TritonClient:
                     "shape": list(arr.shape),
                     "binary_data": base64.b64encode(arr.tobytes()).decode("utf-8"),
                 }
+            ],
+            "outputs":[
+                {
+                    "name":TRITON_OUTPUT_NAME,
+                    "binary_data":True 
+                }
             ]
         }
 
@@ -49,13 +66,20 @@ class TritonClient:
             )
             response.raise_for_status()
             data = response.json()
-
-        outputs = data["outputs"][0]
+        output=next(output for output in data["outputs"] if output["name"]==TRITON_OUTPUT_NAME)
         predictions = np.frombuffer(
-            base64.b64decode(outputs["binary_data"]), dtype=np.float32
-        ).reshape(outputs["shape"])
+            base64.b64decode(output["binary_data"]), dtype=np.float32
+        ).reshape(output["shape"])
+        probabilities=self._softmax(predictions)
 
-        return {"predictions": predictions.tolist(), "top": self._top_k(predictions, k=5)}
+        return {"logits":predictions.tolist(),"probabilities":probabilities.tolist(),"top":self._top_k(probabilities,k=5)}
+
+    @staticmethod
+    def _softmax(logits:np.ndarray)->np.ndarray:
+        logits=logits-np.max(logits,axis=1,keepdims=True)
+        probabilites=np.exp(logits)
+        probabilites/=probabilites.sum(axis=1,keepdims=True)
+        return probabilites
 
     @staticmethod
     def _top_k(predictions: np.ndarray, k: int = 5) -> list[dict]:
