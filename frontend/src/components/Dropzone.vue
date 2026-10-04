@@ -42,7 +42,7 @@
       <p class="mt-2 text-sm text-gray-600">
         Arrastra una imagen aqu o <span class="text-indigo-600 font-medium">selecciona un archivo</span>
       </p>
-      <p class="mt-1 text-xs text-gray-500">PNG, JPG, WEBP (se redimensionar a 28x28)</p>
+      <p class="mt-1 text-xs text-gray-500">PNG, JPG, WEBP (Procesamiento a  224x224)</p>
     </div>
   </div>
 </template>
@@ -98,6 +98,9 @@ function selectFile(file: File) {
 }
 
 function clearImage() {
+  if(previewUrl.value){
+    URL.revokeObjectURL(previewUrl.value) 
+  }
   previewUrl.value = ''
   fileName.value = ''
   if (fileInputRef.value) {

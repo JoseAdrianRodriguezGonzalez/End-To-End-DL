@@ -2,25 +2,31 @@
   <header class="bg-indigo-600 text-white">
     <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-xl font-bold">Inference GUI</h1>
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-indigo-100">Servidor:</span>
-        <span :class="statusClass">{{ serverStatus }}</span>
+      <div class="flex items-center gap-3">
+        <div class="flex itemx-center gap-2">
+          <span class="text-sm text-indigo-100">Servidor:</span>
+          <span :class="statusClass">{{ serverStatus }}</span>
+        </div>
+        <span v-if="modelName" class="text-xs bg-indigo-500 py-1 px-2 rounded">
+        {{ modelName }}
+        </span>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted,onUnmounted } from 'vue'
 import { checkHealth } from '@/services/triton'
 
 const serverStatus = ref('Desconocido')
 const statusClass = ref('')
-
+const modelName = ref('')
+let statusInterval:ReturnType<typeof setInterval> | undefined 
 async function refreshStatus() {
   try {
     const data = await checkHealth()
-    serverStatus.value = data.triton === 'ok' ? 'En lnea' : 'Offline'
+    serverStatus.value = data.triton === 'ok' ? 'En línea' : 'Offline'
     statusClass.value = data.triton === 'ok' ? 'text-green-300 font-medium' : 'text-red-300'
   } catch {
     serverStatus.value = 'Offline'
@@ -30,6 +36,11 @@ async function refreshStatus() {
 
 onMounted(() => {
   refreshStatus()
-  setInterval(refreshStatus, 10000)
+  statusInterval=setInterval(refreshStatus, 10000)
+})
+onUnmounted(() => {
+  if (statusInterval){
+    clearInterval(statusInterval)
+  }
 })
 </script>
