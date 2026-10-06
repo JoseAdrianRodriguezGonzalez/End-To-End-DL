@@ -20,6 +20,52 @@ export interface HealthResponse {
   triton: string
   model: string
 }
+export interface ObservabilityData {
+  api: {
+    status: string
+  }
+
+  triton: {
+    status: string
+    server: string
+    model: string
+    triton_ready: boolean
+    model_ready: boolean
+  }
+
+  inference: {
+    requests: {
+      successful: number
+      failed: number
+    }
+
+    inference: {
+      count: number
+      executions: number
+    }
+
+    latency_us: {
+      request: number
+      request_avg: number
+
+      queue: number
+      queue_avg: number
+
+      compute_input: number
+      compute_input_avg: number
+
+      compute_infer: number
+      compute_infer_avg: number
+
+      compute_output: number
+      compute_output_avg: number
+    }
+
+    pending_requests: number
+  }
+}
+
+
 
 export const tritonApi = axios.create({
   baseURL: API_BASE,
@@ -58,6 +104,10 @@ export async function checkHealth(): Promise<HealthResponse> {
 }
 
 export async function listModels() {
-  const response = await tritonApi.get('/models')
+  const response = await tritonApi.post('/models')
+  return response.data
+}
+export const observability = async (): Promise<ObservabilityData> => {
+  const response = await tritonApi.get<ObservabilityData>("/observability")
   return response.data
 }

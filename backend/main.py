@@ -5,8 +5,9 @@ import httpx
 import uvicorn
 from config import TRITON_SERVER_URL, TRITON_MODEL_NAME,CLASS_NAMES
 from triton_client import TritonClient
-
+from observability import setup_observability,get_triton_observability,get_triton_metrics
 app = FastAPI(title="Inference API", version="0.1.0")
+setup_observability(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,9 +16,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 client = TritonClient(TRITON_SERVER_URL)
+@app.get("/api/observability")
+async def observability() -> dict:
+    triton = await get_triton_observability()
+    metrics = await get_triton_metrics()
 
+    return {
+        "api": {
+            "status": "healthy",
+        },
+        "triton": triton,
+        "inference": metrics,
+    }
 @app.get("/api/health")
 async def health() -> dict:
     try:
@@ -63,7 +74,7 @@ async def health() -> dict:
 async def list_models() -> dict:
     try:
         async with httpx.AsyncClient() as c:
-            r = await c.get(f"{TRITON_SERVER_URL}/v2/repository/index", timeout=10.0)
+            r = await c.post(f"{TRITON_SERVER_URL}/v2/repository/index", timeout=10.0)
             r.raise_for_status()
             return {"models":r.json()}
     except httpx.RequestError as e:

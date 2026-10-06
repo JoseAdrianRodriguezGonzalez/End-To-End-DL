@@ -2,6 +2,13 @@
   <header class="bg-indigo-600 text-white">
     <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-xl font-bold">Inference GUI</h1>
+
+        <RouterLink to="/">
+          Menu principal
+        </RouterLink>
+        <RouterLink to="/metricas">
+          Métricas
+        </RouterLink>
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
           <span class="text-sm text-indigo-100">Servidor:</span>
